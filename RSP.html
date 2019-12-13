@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="./master.css" rel="stylesheet">
+    <meta charset="utf-8">
+    <link rel="icon" href="/image/rsp_favicon.gif" type="image/gif" >
+    <title>심리전 가위바위보!</title>
+  </head>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+  <script>
+  var socket = io();
+  var style = '';
+
+  var block = true;
+
+  $(function(){
+
+    //selection button event
+    document.querySelectorAll('.rsp_img').forEach(function(btn){
+      var value = btn.getAttribute('alt');
+      btn.addEventListener('click',function(e){
+        e.preventDefault();
+        if(!block) {
+          clicked(btn);
+          socket.emit('selection', value);
+        }
+      })
+    })
+    //selected image -> active
+    function clicked(element){
+      document.querySelectorAll('.rsp_img').forEach(function(btn){
+        btn.classList.remove("active");
+      });
+      element.classList.add("active");
+    }
+
+    $(document).keypress(function(e) {
+      if(e.which == 49) {
+        document.querySelectorAll('.rsp_img')[0].click();
+      }
+      else if(e.which == 50) {
+        document.querySelectorAll('.rsp_img')[1].click();
+      }
+      else if(e.which == 51) {
+        document.querySelectorAll('.rsp_img')[2].click();
+      }
+      else if(e.which == 13) {
+        document.querySelector('#m').focus();
+      }
+    });
+
+
+    //player information
+    socket.on('player1', function(id){
+      if(id==='') id='No player';
+      document.getElementById('player1_id').innerHTML = '(id:'+id+')';
+      var color='#ff3636';
+      if(id==socket.id) color='#1cde03';
+      document.getElementById('choice1').setAttribute("style","border :2px solid "+color+";");
+    })
+    socket.on('player2', function(id){
+      if(id==='') id='No player';
+      document.getElementById('player2_id').innerHTML =  '(id:'+id+')';
+      var color='#ff3636';
+      if(id==socket.id) color='#1cde03';
+      document.getElementById('choice2').setAttribute("style","border :2px solid "+color+";");
+    })
+
+    //selection
+    socket.on('player1_select', function(select){
+      var src;
+      if(select==='scissors') src = "/image/scissors.png";
+      else if(select==='rock') src = "/image/rock.png";
+      else if(select==='paper') src = "/image/paper.png";
+      document.getElementById('choice1').setAttribute("src",src);
+    })
+    socket.on('player2_select', function(select){
+      var src;
+      if(select==='scissors') src = "/image/scissors.png";
+      else if(select==='rock') src = "/image/rock.png";
+      else if(select==='paper') src = "/image/paper.png";
+      document.getElementById('choice2').setAttribute("src",src);
+    })
+
+    //round winner
+    socket.on('win',function(number){
+      var color;
+      if(document.getElementById('choice'+number).style.borderColor=="rgb(28, 222, 3)")
+      document.getElementById('choice'+number).style.boxShadow = "0px 0px 3px 3px #1cde03, 0px 0px 6px 6px #60e74e, 0px 0px 11px 11px #a4f19a, 0px 0px 15px 15px #e8fbe5";
+      else document.getElementById('choice'+number).style.boxShadow = "0px 0px 3px 3px #ff3636, 0px 0px 6px 6px #ff7272, 0px 0px 11px 11px #ffaeae, 0px 0px 15px 15px #ffeaea";
+
+      setTimeout(function(){
+        document.getElementById('choice'+number).style.boxShadow = "0px 0px 0px 0px #888888";
+      },2000)
+    })
+
+    //round
+    socket.on('round', function(round){
+      document.getElementById('round').innerHTML =  change_to_ordinal(round);
+      clicked(document.querySelectorAll('.rsp_img')[0]);
+    })
+
+    //score
+    socket.on('score1', function(score){
+      document.getElementById('score1').innerHTML =  score;
+    })
+    socket.on('score2', function(score){
+      document.getElementById('score2').innerHTML =  score;
+    })
+
+    //chatting
+    //send message
+    $('form').submit(function(e){
+      e.preventDefault();
+      socket.emit('chat message', $('#m').val());
+      $('#m').val('');
+      return false;
+    });
+    //control background by who's chatted
+    socket.on('writer', function(writer){
+      if(writer === 0) style = 'color:#000000; text-align: center;';
+      else if(writer == socket.id) style = 'color:#1cde03;';
+      else style = 'color: #ff3636; text-align: right;';
+    })
+    //append the message
+    socket.on('chat message', function(msg){
+      $('#messages').append($('<li style="'+style+'">').text(msg));
+      $(".message_box").scrollTop($(".message_box")[0].scrollHeight);
+    })
+
+    //timer
+    socket.on('timer', function(timer){
+      document.getElementById('timer').innerHTML = timer;
+    })
+    //block selecting
+    socket.on('block', function(bool){
+      block  = bool;
+    })
+
+    //change cardinal number to ordinal number
+    function change_to_ordinal(num){
+       if(parseInt(num / 10) !== 1 && num % 10 === 1) return num+'st';
+       else if(parseInt(num / 10) !== 1 && num % 10 === 2) return num+'nd';
+       else if(parseInt(num / 10) !== 1 && num % 10 === 3) return num+'rd';
+       else return num+'th';
+    }
+
+    //final results log
+    socket.on('results array', function(array){
+    var text="Final Result\n";
+    var result;
+    for (var i = 0; i < array.length; i++) {
+      if(array[i]===0) result = '무승부';
+      else if(array[i]===socket.id) result = '승';
+      else result = '패';
+     text += change_to_ordinal(i+1)+' Round : ' + result + "\n";
+    }
+    setTimeout(function(){alert(text);},1000);
+    })
+  })
+  </script>
+  <body>
+    <div class="game_info">
+      <h1>심리전 가위바위보!</h1>
+      <p><span id="score1"></span> : <span id="score2"></span></p>
+      <div class="round"><span id="round"></span> Round</div>
+      <div class="timer"><span id="timer"></span></div>
+    </div>
+    <div class="player">
+      Player1
+      <div class="player_id" id="player1_id"></div>
+      <img class="select_img" id="choice1" src="/image/scissors.png" alt="player1_selection">
+    </div>
+    <div class="player">
+      Player2
+      <div class="player_id" id="player2_id"></div>
+      <img class="select_img" id="choice2" src="/image/scissors.png" alt="player2_selection">
+    </div>
+    <div class="selections">
+      <img class="rsp_img active" src="/image/scissors.png" alt="scissors">
+      <img class="rsp_img" src="/image/rock.png" alt="rock">
+      <img class="rsp_img" src="/image/paper.png" alt="paper">
+    </div>
+    <div class="chat">
+      <div class="message_box">
+        <ul id="messages"></ul>
+      </div>
+      <form action="">
+        <input id="m" autocomplete="off" /><button>Send</button>
+      </form>
+    </div>
+  </body>
+</html>
