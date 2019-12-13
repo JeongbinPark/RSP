@@ -108,7 +108,6 @@ function Init_Settings(){
       Init_Score();
       update_score();
       Init_RSP();
-      update_RSP();
       Init_Round();
       update_Round();
       Init_Timer();
@@ -140,7 +139,7 @@ function Game_Play(){
 
   io.emit('round', round);
   Init_RSP();
-  update_RSP();
+  round_init_update_RSP();
   Init_Timer();
   Result_after_Timeout(); //call Timer and pass the result
 }
@@ -161,6 +160,11 @@ function Init_RSP(){
   player1_select = rsp[0];
   player2_select = rsp[0];
 }
+//update selection to blank (beginning of the round)
+function round_init_update_RSP(){
+  io.emit('player1_select', '');
+  io.emit('player2_select', '');
+}
 //update selection
 function update_RSP(){
   io.emit('player1_select', player1_select);
@@ -173,12 +177,15 @@ io.on('connection', function(socket){
     if(socket.id == player1) {
       player1 = socket.id;
       player1_select = select;
+      socket.emit('player1_select', player1_select);
+      game_message("player1이 선택을 바꾸었습니다.");
     }
     else if(socket.id == player2) {
       player2 = socket.id;
       player2_select = select;
+      socket.emit('player2_select', player2_select);
+      game_message("player2가 선택을 바꾸었습니다.");
     }
-    update_RSP();
   })
 });
 
@@ -222,6 +229,7 @@ async function Result_after_Timeout(){
 //result
 //Round result (compare selections)
 function Round_Result(){
+  update_RSP();
   console.log("Result!");
   console.log(player1_select," vs ", player2_select);
 

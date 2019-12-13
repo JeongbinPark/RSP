@@ -73,6 +73,7 @@
       if(select==='scissors') src = "/image/scissors.png";
       else if(select==='rock') src = "/image/rock.png";
       else if(select==='paper') src = "/image/paper.png";
+      else if(select==='') src = "/image/blank.png"
       document.getElementById('choice1').setAttribute("src",src);
     })
     socket.on('player2_select', function(select){
@@ -80,6 +81,7 @@
       if(select==='scissors') src = "/image/scissors.png";
       else if(select==='rock') src = "/image/rock.png";
       else if(select==='paper') src = "/image/paper.png";
+      else if(select==='') src = "/image/blank.png"
       document.getElementById('choice2').setAttribute("src",src);
     })
 
@@ -92,7 +94,7 @@
 
       setTimeout(function(){
         document.getElementById('choice'+number).style.boxShadow = "0px 0px 0px 0px #888888";
-      },2000)
+      },3000)
     })
 
     //round
@@ -170,12 +172,12 @@
     <div class="player">
       Player1
       <div class="player_id" id="player1_id"></div>
-      <img class="select_img" id="choice1" src="/image/scissors.png" alt="player1_selection">
+      <img class="select_img" id="choice1" src="/image/blank.png" alt="player1_selection">
     </div>
     <div class="player">
       Player2
       <div class="player_id" id="player2_id"></div>
-      <img class="select_img" id="choice2" src="/image/scissors.png" alt="player2_selection">
+      <img class="select_img" id="choice2" src="/image/blank.png" alt="player2_selection">
     </div>
     <div class="selections">
       <img class="rsp_img active" src="/image/scissors.png" alt="scissors">
